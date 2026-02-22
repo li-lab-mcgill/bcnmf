@@ -1,0 +1,30 @@
+# Data (too large for git)
+data/
+*.h5ad
+*.h5
+*.loom
+*.csv
+*.tsv
+*.gz
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+._*
+
+# Environments
+.env
+.venv
+venv/

@@ -1,0 +1,8 @@
+numpy>=1.22
+torch>=2.0
+tqdm
+scikit-learn
+scipy
+umap-learn
+matplotlib
+scanpy

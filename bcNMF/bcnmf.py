@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-import tqdm as tqdm
+from tqdm import tqdm
 
 
 def nmf_sse(X, K, niter=100):

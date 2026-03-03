@@ -4,6 +4,7 @@
 
 > Yixuan Li, Archer Y. Yang, Yue Li
 > *bcNMF: Background Contrastive Nonnegative Matrix Factorization Identifies Target-Specific Features in High-Dimensional Data*
+> [arXiv:2602.22387](https://arxiv.org/html/2602.22387v1)
 
 ---
 
@@ -95,6 +96,9 @@ Each subdirectory under `experiments/` contains a Jupyter notebook that reproduc
   title  = {bcNMF: Background Contrastive Nonnegative Matrix Factorization
             Identifies Target-Specific Features in High-Dimensional Data},
   author = {Li, Yixuan and Yang, Archer Y. and Li, Yue},
-  year   = {2025}
+  year   = {2025},
+  eprint = {2602.22387},
+  archivePrefix = {arXiv},
+  url    = {https://arxiv.org/abs/2602.22387}
 }
 ```

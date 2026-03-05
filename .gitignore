@@ -1,11 +1,7 @@
-# Data (too large for git)
-data/
-*.h5ad
-*.h5
-*.loom
-*.csv
-*.tsv
-*.gz
+# Files too large for GitHub (>100 MB)
+dataset/leukemia/adata_X_hvg_3000.h5ad
+dataset/cancer_cell_lines/dmso/DMSO_24hr_expt1/matrix.mtx
+dataset/cancer_cell_lines/idasanutlin/Idasanutlin_24hr_expt1/matrix.mtx
 
 # Python
 __pycache__/

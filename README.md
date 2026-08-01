@@ -92,7 +92,7 @@ Each notebook loads its stored processed input, fits bcNMF, and calculates the r
 
 ## Data and source data
 
-The processed matrices in `data/` are the released paper-analysis inputs and contain no direct identifiers. Please cite the original MNIST, Mouse Protein Expression, leukemia, McFarland MIX-seq, and MDD studies when using their source data. The single workbook `Source_Data.xlsx` contains the numerical source values for each reported display item.
+The processed matrices in `data/` are the released paper-analysis inputs and contain no direct identifiers. Please cite the original MNIST, Mouse Protein Expression, leukemia, McFarland MIX-seq, and MDD studies when using their source data. Source Data are provided with this paper in `Source_Data.xlsx`, with a separate worksheet for the numerical values underlying each reported display item.
 
 Two processed inputs exceed GitHub's 100 MB per-file limit and are therefore distributed through the project data archive rather than this repository: `data/leukemia/target_prepost_3000hvg.h5ad` and `data/mcfarland/mcfarland_preprocessed.h5ad`. Download each file from the archive and place it at the stated path before running the corresponding notebook. The archive link and DOI will be added here upon deposition.
 

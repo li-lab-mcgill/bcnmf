@@ -6,6 +6,8 @@
 > *bcNMF: Background Contrastive Nonnegative Matrix Factorization Identifies Target-Specific Features in High-Dimensional Data*
 > [arXiv:2602.22387](https://arxiv.org/html/2602.22387v1)
 
+> **Reproducibility release:** The updated installable package, compact analysis inputs, paper notebooks, generated simulation, and Source Data workbook are in [`reproducibility/`](reproducibility/). Start with its [README](reproducibility/README.md).
+
 ---
 
 ## System Requirements

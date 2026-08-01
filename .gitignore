@@ -3,6 +3,10 @@ dataset/leukemia/adata_X_hvg_3000.h5ad
 dataset/cancer_cell_lines/dmso/DMSO_24hr_expt1/matrix.mtx
 dataset/cancer_cell_lines/idasanutlin/Idasanutlin_24hr_expt1/matrix.mtx
 
+# Large reproducibility inputs are deposited outside GitHub.
+reproducibility/data/leukemia/target_prepost_3000hvg.h5ad
+reproducibility/data/mcfarland/mcfarland_preprocessed.h5ad
+
 # Python
 __pycache__/
 *.py[cod]

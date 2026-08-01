@@ -1,214 +1,114 @@
 # bcNMF: Background Contrastive Nonnegative Matrix Factorization
 
-**bcNMF** extracts target-enriched latent components from high-dimensional data by jointly factorizing a target dataset and a matched background using shared nonnegative bases under a contrastive objective that suppresses shared variation.
+bcNMF identifies target-enriched nonnegative programs by jointly factorizing a target dataset and a matched background dataset. It is designed for settings in which the target contains both shared background variation and variation of scientific interest. The contrastive parameter `alpha` downweights programs that are also active in the background.
 
-> Yixuan Li, Archer Y. Yang, Yue Li
-> *bcNMF: Background Contrastive Nonnegative Matrix Factorization Identifies Target-Specific Features in High-Dimensional Data*
-> [arXiv:2602.22387](https://arxiv.org/html/2602.22387v1)
+This release contains the installable Python package, compact processed inputs, reproducible notebooks for the manuscript analyses, a self-contained count-data simulation, and the numerical source data underlying the reported figures and tables.
 
-> **Reproducibility release:** The updated installable package, compact analysis inputs, paper notebooks, generated simulation, and Source Data workbook are in [`reproducibility/`](reproducibility/). Start with its [README](reproducibility/README.md).
+## Installation
 
----
-
-## System Requirements
-
-### Software dependencies
-
-- **Python** >= 3.9
-- **PyTorch** >= 2.0
-- **numpy** >= 1.22
-- **scipy**
-- **scikit-learn**
-- **tqdm**
-- **umap-learn**
-- **matplotlib**
-- **scanpy** (required for scRNA-seq experiments)
-
-All dependencies are listed in `requirements.txt`.
-
-### Operating systems tested
-
-- macOS 13+ (Ventura / Sonoma)
-- Linux (Ubuntu 20.04+)
-- Windows 10/11
-
-### Hardware
-
-No non-standard hardware is required. A CUDA-capable GPU is optional and will be used automatically if available; all functions fall back to CPU otherwise.
-
----
-
-## Installation Guide
-
-### Instructions
+bcNMF requires Python 3.9 or later. A CUDA-capable GPU is used automatically when available; CPU execution is also supported.
 
 ```bash
 git clone https://github.com/li-lab-mcgill/bcnmf.git
 cd bcnmf
-pip install -e .
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-Or install dependencies only:
+## Using bcNMF
 
-```bash
-pip install -r requirements.txt
-```
+bcNMF takes a target matrix `X` and background matrix `Y`, both with shape **features x cells**. The feature order must be identical in `X` and `Y`.
 
-### Typical install time
-
-On a standard desktop computer with a normal internet connection, installation takes **< 5 minutes**.
-
----
-
-## Demo
-
-### Dataset
-
-A self-contained demo is provided in the `demo/` directory. It reproduces the MNIST + natural image background experiment (Section 2.2 of the paper) using pre-generated data included in the repository:
-
-```
-demo/
-├── simulation.ipynb              # Demo notebook
-├── demo_data/
-│   ├── target_images.csv         # 784 × 200  (MNIST digits 0/1 on flower backgrounds)
-│   ├── background_images.csv     # 784 × 150  (flower patches only)
-│   └── target_labels.csv         # Ground-truth digit labels (0 or 1)
-└── results/                      # Output figures and matrices written here
-```
-
-### Instructions to run
-
-```bash
-cd demo
-jupyter notebook simulation.ipynb
-```
-
-Run all cells in order. The notebook will:
-1. Display example target images (digits on backgrounds) and background-only images
-2. Fit standard NMF with K=2
-3. Fit bcNMF with K=2 and α=1
-4. Produce scatter plots of NMF vs. bcNMF factor scores coloured by digit label
-5. Report ARI (Adjusted Rand Index) for each method
-
-### Expected output
-
-- Two scatter plots saved to `demo/results/nmf_vs_bcnmf.png`
-- Factor matrices saved to `demo/results/H_nmf.csv`, `demo/results/H_bcnmf.csv`
-- ARI summary saved to `demo/results/ari_summary.csv`
-- bcNMF achieves substantially higher ARI than standard NMF, showing that the contrastive objective suppresses the background texture signal and recovers the digit structure.
-
-### Expected run time
-
-**< 2 minutes** on a standard desktop CPU (no GPU required).
-
----
-
-## Instructions for Use
-
-### Running bcNMF on your own data
+For raw nonnegative counts, use the Poisson likelihood:
 
 ```python
 import numpy as np
-from bcNMF import contrastive_nmf_poisson
+from sklearn.cluster import KMeans
 
-# X: (n_features, n_target_samples)     — target data (nonnegative counts)
-# Y: (n_features, n_background_samples) — background data (nonnegative counts)
-X = np.random.poisson(5, size=(500, 200)).astype(float)
-Y = np.random.poisson(5, size=(500, 100)).astype(float)
+from bcnmf import run_bcnmf
 
-W, H_X, H_Y, perf = contrastive_nmf_poisson(X, Y, K=10, alpha=1.0, niter=200)
-# W   : (n_features, K)  shared nonneg basis
-# H_X : (K, n_target_samples)  target coefficients  ← use for downstream analysis
-# H_Y : (K, n_background_samples)  background coefficients
+# X: genes x target cells; Y: the same genes x background cells.
+X = np.load("target_counts.npy")
+Y = np.load("background_counts.npy")
+
+W, H_target, H_background, trace = run_bcnmf(
+    X,
+    Y,
+    k=10,
+    alpha=2.0,
+    likelihood="poisson",
+    n_iter=200,
+    seed=0,
+    n_starts=3,
+    damping=0.5,
+)
+
+# H_target has shape K x target cells and is used for downstream analyses.
+clusters = KMeans(n_clusters=2, random_state=42, n_init=20).fit_predict(H_target.T)
 ```
 
-For continuous/image data use `contrastive_nmf_sse` (squared-error loss). Mini-batch training is available via `contrastive_nmf_poisson_minibatch` for large datasets.
+`W` contains nonnegative feature loadings, and `H_target` and `H_background` contain topic usage in target and background cells. Labels are not used while fitting; they may be used afterwards for evaluation or for associating topics with an external phenotype.
 
-### Available functions
+For log-normalized nonnegative data, set `likelihood="sse"`. The number of topics `k` and contrastive strength `alpha` should be selected jointly. The manuscript recommends held-out reconstruction and topic stability as label-free selection diagnostics.
 
-| Function | Loss | Use case |
+### Main functions
+
+| Function | Objective | Typical use |
 |---|---|---|
-| `nmf_sse` | Squared error | Standard NMF baseline |
-| `nmf_poisson` | Poisson | Standard NMF, count data |
-| `nmf_poisson_minibatch` | Poisson | Large-scale standard NMF |
-| `contrastive_nmf_sse` | Squared error | bcNMF for continuous / image data |
-| `contrastive_nmf_poisson` | Poisson | bcNMF for scRNA-seq / count data |
-| `contrastive_nmf_poisson_minibatch` | Poisson | bcNMF, large-scale |
-| `contrastive_nmf_sse_multi` | Squared error | bcNMF for two-modality data |
+| `contrastive_nmf_poisson` | Poisson contrastive objective | Raw count data, including scRNA-seq counts |
+| `contrastive_nmf_sse` | Squared-error contrastive objective | Log-normalized, continuous, or image data |
+| `contrastive_nmf_sse_combined_basis_reg` | Combined shared and target-specific squared-error model | The MNIST two-digit analysis |
+| `nmf_poisson`, `nmf_sse` | Standard non-contrastive NMF | Baseline analyses |
+| `run_bcnmf` | Wrapper for Poisson or squared-error bcNMF | Recommended entry point for new analyses |
+| `ari_from_target_coefficients` | K-means and adjusted Rand index | Optional post-fit evaluation when labels are available |
 
-### Key parameters
+The lower-level fitting functions return `W`, `H_target`, `H_background`, and an optimization trace. `run_bcnmf` provides a single interface for the Poisson and squared-error implementations.
 
-| Parameter | Description | Default |
-|---|---|---|
-| `K` | Number of factors | required |
-| `alpha` | Background suppression strength (higher = more contrastive) | `1.0` |
-| `niter` | Number of multiplicative-update iterations | `200` |
-| `tol` | Convergence tolerance | `1e-4` |
+## Reproducing the manuscript analyses
 
----
+Start Jupyter from the repository root so that the notebooks can find the released inputs:
 
-## Reproduction Instructions
-
-Each experiment in the paper has a corresponding Jupyter notebook under `experiments/`.
-
-| Section | Notebook | Data |
-|---|---|---|
-| Sec 2.2 — Simulation (MNIST + ImageNet) | `experiments/simulation/mnist_imagenet.ipynb` | `dataset/simulation/n11939491/` (ImageNet grass images) |
-| Sec 2.3 — Mice protein | `experiments/mice_protein/mice_protein.ipynb` | `dataset/mice_protein/Data_Cortex_Nuclear.csv` |
-| Sec 2.4 — Leukemia scRNA-seq | `experiments/leukemia/leukemia.ipynb` | `dataset/leukemia/` (see note below) |
-| Sec 2.5 — Cancer cell lines | `experiments/cancer_cell_lines/mcfarland.ipynb` | `dataset/cancer_cell_lines/` (see note below) |
-| Sec 2.6 — MDD snRNA-seq | `experiments/mdd/mdd_final.ipynb` | `dataset/mdd/` (see note below) |
-
-**Note on large datasets:** The following raw data files exceed GitHub's file size limit and are not included in this repository. Each notebook contains instructions at the top for downloading the data.
-
-- `dataset/leukemia/adata_X_hvg_3000.h5ad` (183 MB) — generated by running the preprocessing cells in `leukemia.ipynb` on the raw 10x Genomics BMMC data
-- `dataset/cancer_cell_lines/**/matrix.mtx` (~105 MB each) — downloaded automatically by running Cell 1 in `mcfarland.ipynb`
-- MDD full dataset (`mdd_full.h5ad`, ~9 GB) — available from the original data source; see `mdd_final.ipynb` for details
-
----
-
-## Repository Structure
-
-```
-bcNMF/
-├── bcNMF/                  # Python package
-│   ├── __init__.py
-│   └── bcnmf.py            # Core multiplicative-update algorithms
-├── demo/                   # Self-contained demo (runs without downloading data)
-│   ├── simulation.ipynb
-│   ├── demo_data/
-│   └── results/
-├── experiments/
-│   ├── simulation/         # Sec 2.2 — MNIST + ImageNet
-│   ├── mice_protein/       # Sec 2.3 — Down syndrome protein expression
-│   ├── leukemia/           # Sec 2.4 — Leukemia scRNA-seq (pre/post transplant)
-│   ├── cancer_cell_lines/  # Sec 2.5 — MIX-seq idasanutlin / TP53
-│   └── mdd/                # Sec 2.6 — MDD snRNA-seq (postmortem brain)
-├── dataset/                # Data files (large files excluded, see .gitignore)
-├── LICENSE
-├── setup.py
-├── requirements.txt
-└── README.md
+```bash
+jupyter lab notebooks/
 ```
 
----
+Each notebook loads its stored processed input, fits bcNMF, and calculates the reported adjusted Rand index (ARI) endpoint. The released matrices and all fitting functions use the features-by-cells convention.
+
+| Notebook | Input | Target/background construction | Endpoint |
+|---|---|---|---|
+| `notebooks/mdd.ipynb` | 1,147 nuclei x 3,000 genes | MDD and control nuclei in the target matrix; control nuclei form the background matrix | MDD/control ARI |
+| `notebooks/mnist.ipynb` | Blended MNIST K=2 and K=16 matrices | Saved target and background pixel matrices | Digit ARI |
+| `notebooks/mouse_ds.ipynb` | Mice Protein Expression data | S/C saline control and Ts65Dn target; C/S saline control background | DS-status ARI |
+| `notebooks/leukemia.ipynb` | Saved 3,000-HVG scRNA-seq matrices | AML027 pre/post-transplant target; healthy donor background | Transplant-status ARI |
+| `notebooks/mcfarland.ipynb` | Stored 10,000-HVG MIX-seq matrix | Idasanutlin target; DMSO background | TP53-status ARI |
+| `demo/simulation.ipynb` | Generated 3,000-gene count matrices | Two target subtypes with five background programs | Target-subtype ARI |
+
+
+## Self-contained simulation
+
+`demo/data/` contains labelled count matrices generated at beta = 0, 1, 2, 4, 8, and 16. Each `.npz` file contains `X` and `Y` (genes x cells), target subtype labels, background classes, true programs, beta, and seed. Open `demo/simulation.ipynb` from the repository root to fit the beta = 8 data and inspect the beta-series benchmark without downloading external data.
+
+## Data and source data
+
+The processed matrices in `data/` are the released paper-analysis inputs and contain no direct identifiers. Please cite the original MNIST, Mouse Protein Expression, leukemia, McFarland MIX-seq, and MDD studies when using their source data. The single workbook `Source_Data.xlsx` contains the numerical source values for each reported display item.
+
+`docs/DATA_CODE_AVAILABILITY.md` contains manuscript-ready Data Availability and Code Availability statements. 
 
 ## Citation
 
 ```bibtex
-@article{li2025bcnmf,
-  title  = {bcNMF: Background Contrastive Nonnegative Matrix Factorization
-            Identifies Target-Specific Features in High-Dimensional Data},
-  author = {Li, Yixuan and Yang, Archer Y. and Li, Yue},
-  year   = {2025},
-  eprint = {2602.22387},
+@article{li2026bcnmf,
+  title   = {bcNMF: Background Contrastive Nonnegative Matrix Factorization Identifies Target-Specific Features in High-Dimensional Data},
+  author  = {Li, Yixuan and Yang, Archer Y. and Li, Yue},
+  year    = {2026},
+  eprint  = {2602.22387},
   archivePrefix = {arXiv},
-  url    = {https://arxiv.org/abs/2602.22387}
+  url     = {https://arxiv.org/abs/2602.22387}
 }
 ```
 
----
-
 ## License
 
-This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
+The code is distributed under the MIT License. Dataset redistribution remains subject to the terms of the original data providers.

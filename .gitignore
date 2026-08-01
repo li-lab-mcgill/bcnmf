@@ -1,30 +1,10 @@
-# Files too large for GitHub (>100 MB)
-dataset/leukemia/adata_X_hvg_3000.h5ad
-dataset/cancer_cell_lines/dmso/DMSO_24hr_expt1/matrix.mtx
-dataset/cancer_cell_lines/idasanutlin/Idasanutlin_24hr_expt1/matrix.mtx
-
-# Large reproducibility inputs are deposited outside GitHub.
-reproducibility/data/leukemia/target_prepost_3000hvg.h5ad
-reproducibility/data/mcfarland/mcfarland_preprocessed.h5ad
-
-# Python
+.venv/
 __pycache__/
-*.py[cod]
-*.so
-*.egg
-*.egg-info/
-dist/
-build/
-.eggs/
-
-# Jupyter
 .ipynb_checkpoints/
+*.pyc
+notebooks/*.html
+demo/*.html
 
-# macOS
-.DS_Store
-._*
-
-# Environments
-.env
-.venv
-venv/
+# Large processed inputs are distributed through the project data archive.
+data/leukemia/target_prepost_3000hvg.h5ad
+data/mcfarland/mcfarland_preprocessed.h5ad

@@ -149,7 +149,7 @@ For continuous/image data use `contrastive_nmf_sse` (squared-error loss). Mini-b
 
 ## Reproduction Instructions
 
-Each experiment in the paper has a corresponding Jupyter notebook under `experiments/`. Pre-computed result matrices are provided in `result/` so figures can be reproduced without re-running the full fitting.
+Each experiment in the paper has a corresponding Jupyter notebook under `experiments/`.
 
 | Section | Notebook | Data |
 |---|---|---|
@@ -185,7 +185,6 @@ bcNMF/
 │   ├── cancer_cell_lines/  # Sec 2.5 — MIX-seq idasanutlin / TP53
 │   └── mdd/                # Sec 2.6 — MDD snRNA-seq (postmortem brain)
 ├── dataset/                # Data files (large files excluded, see .gitignore)
-├── result/                 # Pre-computed result matrices (.npy)
 ├── LICENSE
 ├── setup.py
 ├── requirements.txt
